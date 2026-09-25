@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sentinel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f0d; --panel:#131916; --panel-2:#1a221c; --line:#243027;
+  --text:#e8efe9; --muted:#8a9a8f;
+  --safe:#4fd88a; --warn:#e8b23d; --crit:#ff5f5f;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;}
+html,body{height:100%; margin:0;}
+body{background:var(--bg); color:var(--text); font-family:'IBM Plex Sans',sans-serif;}
+h1,h2,h3{font-family:'Rajdhani',sans-serif; margin:0;}
+.app{max-width:480px; margin:0 auto; min-height:100%; display:flex; flex-direction:column; background:var(--bg);}
+
+/* top bar */
+.topbar{padding:16px 18px 12px; padding-top:calc(16px + env(safe-area-inset-top,0px)); display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line);}
+.topbar .title{font-weight:700; font-size:20px; letter-spacing:.02em;}
+.topbar .title span{color:var(--safe);}
+.ring-status{font-size:11px; color:var(--muted); text-align:right;}
+.ring-status .dot{display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--safe); margin-right:5px;}
+
+main{flex:1; overflow-y:auto; padding:16px 18px 90px;}
+.screen{display:none;}
+.screen.active{display:block;}
+
+/* banner */
+.banner{border-radius:12px; padding:16px; margin-bottom:16px; background:var(--panel); border:1px solid var(--line);}
+.banner.warn{background:#2a2312; border-color:#4a3d15;}
+.banner.crit{background:#2a1414; border-color:#5a1f1f;}
+.banner h2{font-size:17px; margin-bottom:4px;}
+.banner p{margin:0; font-size:13px; color:var(--muted); line-height:1.4;}
+.banner.crit p{color:#ffb3b3;}
+
+/* cards */
+.grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px;}
+.card .label{font-size:12px; color:var(--muted); margin-bottom:6px;}
+.card .value{font-size:26px; font-weight:600;}
+.card .value small{font-size:13px; color:var(--muted); font-weight:400;}
+.card .hint{font-size:11.5px; color:var(--muted); margin-top:6px; line-height:1.35;}
+.bar{height:6px; border-radius:3px; background:#233026; margin-top:8px; overflow:hidden;}
+.bar i{display:block; height:100%;}
+
+.sos{
+  width:100%; padding:16px; border-radius:12px; border:1px solid #5a1f1f; background:#2a1414;
+  color:#ffb3b3; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:16px; letter-spacing:.03em;
+  cursor:pointer; margin-bottom:20px;
+}
+.sos:active{transform:scale(0.98);}
+
+section-title{}
+.section-title{font-size:13px; color:var(--muted); margin:22px 0 10px; letter-spacing:.03em;}
+
+/* map */
+.map-wrap{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:14px;}
+.map-wrap svg{width:100%; height:180px; display:block;}
+.coord{font-size:12px; color:var(--muted); display:flex; justify-content:space-between; margin-top:10px;}
+
+/* chat */
+.chat{display:flex; flex-direction:column; gap:10px; margin-bottom:14px;}
+.msg{max-width:80%; padding:10px 13px; border-radius:14px; font-size:13.5px; line-height:1.4;}
+.msg.them{background:var(--panel); border:1px solid var(--line); align-self:flex-start; border-bottom-left-radius:4px;}
+.msg.me{background:#173324; border:1px solid #245239; align-self:flex-end; border-bottom-right-radius:4px;}
+.who{font-size:11px; color:var(--muted); margin-bottom:8px;}
+.chips{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;}
+.chip{background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:8px 13px; font-size:12.5px; cursor:pointer; color:var(--text);}
+.chip:hover{border-color:#3a4a3e;}
+.inputrow{display:flex; gap:8px; position:sticky; bottom:0;}
+.inputrow input{flex:1; background:var(--panel); border:1px solid var(--line); border-radius:24px; padding:12px 16px; color:var(--text); font-size:13.5px; font-family:inherit;}
+.inputrow input:focus{outline:none; border-color:var(--safe);}
+.sendbtn{background:var(--safe); color:#062012; border:none; border-radius:50%; width:42px; height:42px; font-size:16px; cursor:pointer; flex-shrink:0;}
+.callbtn{width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--text); padding:12px; border-radius:10px; font-size:13.5px; cursor:pointer; margin-bottom:14px; font-family:inherit;}
+.callbtn:hover{border-color:var(--safe);}
+
+/* glossary */
+.term{background:var(--panel); border:1px solid var(--line); border-radius:10px; margin-bottom:8px; overflow:hidden;}
+.term-head{padding:13px 15px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;}
+.term-head b{font-size:14px; font-weight:600;}
+.term-head span{color:var(--muted); font-size:16px;}
+.term-body{padding:0 15px 13px; font-size:13px; color:var(--muted); line-height:1.5; display:none;}
+.term.open .term-body{display:block;}
+
+/* bottom nav */
+nav{position:fixed; bottom:0; left:0; right:0; background:#0e1310; border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom,0px);}
+.navrow{max-width:480px; margin:0 auto; display:flex;}
+.navbtn{flex:1; background:none; border:none; color:var(--muted); font-family:inherit; font-size:10.5px; padding:10px 4px 8px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px;}
+.navbtn .ic{font-size:19px;}
+.navbtn.active{color:var(--safe);}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="title">SENTINEL<span>•</span>YOU</div>
+    <div class="ring-status"><span class="dot"></span>Ring connected · <span id="battTop">--</span>% battery</div>
+  </div>
+
+  <main>
+    <!-- HOME -->
+    <div class="screen active" id="screen-home">
+      <div class="banner" id="homeBanner">
+        <h2 id="bannerTitle">You're doing fine</h2>
+        <p id="bannerText">Your vitals are in a normal range. Nothing to do right now.</p>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="label">Heart Rate</div>
+          <div class="value" id="vHr">--<small> bpm</small></div>
+          <div class="hint">How fast your heart is beating.</div>
+        </div>
+        <div class="card">
+          <div class="label">Body Temperature</div>
+          <div class="value" id="vTemp">--<small> °C</small></div>
+          <div class="hint">How warm your body is.</div>
+        </div>
+        <div class="card">
+          <div class="label">Stress Level</div>
+          <div class="value" id="vStress">--<small> %</small></div>
+          <div class="bar"><i id="stressBar" style="width:0%; background:var(--safe);"></i></div>
+        </div>
+        <div class="card">
+          <div class="label">Ring Battery</div>
+          <div class="value" id="vBatt">--<small> %</small></div>
+          <div class="hint">Charge left in your ring.</div>
+        </div>
+      </div>
+
+      <button class="sos" id="sosBtn">🆘 SEND EMERGENCY ALERT</button>
+      <div class="hint" style="margin-top:-12px; margin-bottom:20px; text-align:center;">Same as double-tapping your ring. Command center is notified right away.</div>
+    </div>
+
+    <!-- LOCATION -->
+    <div class="screen" id="screen-location">
+      <div class="section-title">YOUR LOCATION</div>
+      <div class="map-wrap">
+        <svg viewBox="0 0 300 180" id="mapSvg">
+          <defs><pattern id="g" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M20 0 L0 0 0 20" fill="none" stroke="#1c241d" stroke-width="1"/>
+          </pattern></defs>
+          <rect width="300" height="180" fill="#0f1410"/>
+          <rect width="300" height="180" fill="url(#g)"/>
+          <circle id="youDot" cx="150" cy="90" r="7" fill="#4fd88a"/>
+          <circle cx="150" cy="90" r="14" fill="none" stroke="#4fd88a" stroke-width="1" opacity="0.4"/>
+        </svg>
+        <div class="coord"><span id="coordText">--</span><span id="coordTime">--</span></div>
+      </div>
+      <p class="hint">This shows where you are right now. Your team and command center can see it too, so someone always knows where to find you.</p>
+    </div>
+
+    <!-- DOCTOR -->
+    <div class="screen" id="screen-doctor">
+      <div class="section-title">TALK TO A DOCTOR</div>
+      <div class="who">🩺 Connected with Dr. Patel — on call now</div>
+      <button class="callbtn" id="callBtn">📞 Start a Voice Call</button>
+      <div class="chat" id="doctorChat"></div>
+      <div class="chips">
+        <div class="chip" data-msg="I feel dizzy">I feel dizzy</div>
+        <div class="chip" data-msg="My chest hurts">My chest hurts</div>
+        <div class="chip" data-msg="Just checking in">Just checking in</div>
+      </div>
+      <div class="inputrow">
+        <input type="text" id="doctorInput" placeholder="Type how you're feeling...">
+        <button class="sendbtn" id="doctorSend">➤</button>
+      </div>
+    </div>
+
+    <!-- AI -->
+    <div class="screen" id="screen-ai">
+      <div class="section-title">ASK AI FOR SUGGESTIONS</div>
+      <div class="who">🤖 Looks at your vitals and gives simple advice. Not a replacement for a real doctor.</div>
+      <div class="chat" id="aiChat"></div>
+      <div class="chips">
+        <div class="chip" data-msg="Why is my heart rate high?">Why is my heart rate high?</div>
+        <div class="chip" data-msg="Am I dehydrated?">Am I dehydrated?</div>
+        <div class="chip" data-msg="Should I rest?">Should I rest?</div>
+      </div>
+      <div class="inputrow">
+        <input type="text" id="aiInput" placeholder="Ask about how you're feeling...">
+        <button class="sendbtn" id="aiSend">➤</button>
+      </div>
+    </div>
+
+    <!-- GLOSSARY -->
+    <div class="screen" id="screen-glossary">
+      <div class="section-title">MEDICAL TERMS, EXPLAINED SIMPLY</div>
+      <div id="glossaryList"></div>
+    </div>
+  </main>
+
+  <nav>
+    <div class="navrow" id="navrow">
+      <button class="navbtn active" data-screen="home"><span class="ic">🏠</span>Home</button>
+      <button class="navbtn" data-screen="location"><span class="ic">📍</span>Location</button>
+      <button class="navbtn" data-screen="doctor"><span class="ic">🩺</span>Doctor</button>
+      <button class="navbtn" data-screen="ai"><span class="ic">🤖</span>Ask AI</button>
+      <button class="navbtn" data-screen="glossary"><span class="ic">📖</span>Terms</button>
+    </div>
+  </nav>
+</div>
+
+<script>
+const you = { hr:82, temp:37.0, stress:24, battery:81, x:150, y:90, alert:false };
+
+// ---------- navigation ----------
+document.getElementById('navrow').addEventListener('click', e => {
+  const btn = e.target.closest('.navbtn');
+  if(!btn) return;
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('screen-'+btn.dataset.screen).classList.add('active');
+});
+
+// ---------- home vitals ----------
+function statusLevel(){
+  if(you.alert) return 'crit';
+  if(you.hr>100 || you.temp>37.7 || you.stress>55) return 'warn';
+  return 'safe';
+}
+function renderHome(){
+  document.getElementById('vHr').innerHTML = Math.round(you.hr)+'<small> bpm</small>';
+  document.getElementById('vTemp').innerHTML = you.temp.toFixed(1)+'<small> °C</small>';
+  document.getElementById('vStress').innerHTML = Math.round(you.stress)+'<small> %</small>';
+  document.getElementById('vBatt').innerHTML = you.battery+'<small> %</small>';
+  document.getElementById('battTop').textContent = you.battery;
+  const bar = document.getElementById('stressBar');
+  bar.style.width = you.stress+'%';
+  bar.style.background = you.stress>55?'var(--crit)':you.stress>35?'var(--warn)':'var(--safe)';
+
+  const lvl = statusLevel();
+  const banner = document.getElementById('homeBanner');
+  banner.className = 'banner'+(lvl==='warn'?' warn':lvl==='crit'?' crit':'');
+  const title = document.getElementById('bannerTitle');
+  const text = document.getElementById('bannerText');
+  if(lvl==='crit'){ title.textContent="Emergency alert sent"; text.textContent="Command center has been notified and knows your location. Stay where you are if you can."; }
+  else if(lvl==='warn'){ title.textContent="Take it easy"; text.textContent="A couple of your numbers are a bit high. Slow down, drink some water, and check in if it doesn't pass."; }
+  else { title.textContent="You're doing fine"; text.textContent="Your vitals are in a normal range. Nothing to do right now."; }
+}
+
+document.getElementById('sosBtn').onclick = () => {
+  you.alert = true;
+  renderHome();
+  addMsg('doctorChat','them','Emergency alert received. I can see your vitals and your location. Are you safe to talk?');
+};
+
+// ---------- location ----------
+function renderMap(){
+  you.x = Math.max(20, Math.min(280, you.x + (Math.random()*6-3)));
+  you.y = Math.max(20, Math.min(160, you.y + (Math.random()*6-3)));
+  document.getElementById('youDot').setAttribute('cx', you.x);
+  document.getElementById('youDot').setAttribute('cy', you.y);
+  document.getElementById('coordText').textContent = `Lat ${(28.61 + you.y/9000).toFixed(4)}, Lon ${(77.20 + you.x/9000).toFixed(4)}`;
+  document.getElementById('coordTime').textContent = 'Updated just now';
+}
+
+// ---------- chat helpers ----------
+function addMsg(containerId, who, text){
+  const el = document.createElement('div');
+  el.className = 'msg '+(who==='me'?'me':'them');
+  el.textContent = text;
+  document.getElementById(containerId).appendChild(el);
+  el.scrollIntoView({behavior:'smooth', block:'end'});
+}
+
+// ---------- doctor chat ----------
+addMsg('doctorChat','them',"Hi, I'm Dr. Patel. I can see your vitals on my screen. How are you feeling?");
+function doctorReply(text){
+  const t = text.toLowerCase();
+  let reply = "Thanks for letting me know. I'm keeping an eye on your vitals — reach out again if anything changes.";
+  if(t.includes('dizzy')) reply = "Sit or crouch down if you can, and drink some water. If it doesn't pass in a few minutes, tap the emergency alert.";
+  else if(t.includes('chest')) reply = "That's important — please send an emergency alert now so we can get help to you right away.";
+  else if(t.includes('checking')) reply = "Good to hear from you. Your vitals look normal on my end. Stay safe out there.";
+  setTimeout(()=>addMsg('doctorChat','them',reply), 700);
+}
+function sendDoctor(){
+  const input = document.getElementById('doctorInput');
+  if(!input.value.trim()) return;
+  addMsg('doctorChat','me',input.value);
+  doctorReply(input.value);
+  input.value='';
+}
+document.getElementById('doctorSend').onclick = sendDoctor;
+document.getElementById('doctorInput').addEventListener('keydown', e => { if(e.key==='Enter') sendDoctor(); });
+document.getElementById('callBtn').onclick = function(){
+  this.textContent = '📞 Calling Dr. Patel...';
+  setTimeout(()=>{ this.textContent='📞 Start a Voice Call'; addMsg('doctorChat','them','Missed you on the call — send a message and I\'ll get right back to you.'); }, 2500);
+};
+document.querySelectorAll('#screen-doctor .chip').forEach(c => c.onclick = () => {
+  addMsg('doctorChat','me', c.dataset.msg);
+  doctorReply(c.dataset.msg);
+});
+
+// ---------- AI coach ----------
+addMsg('aiChat','them',"Hi! Ask me anything about how you're feeling right now, in plain words.");
+function aiReply(text){
+  const t = text.toLowerCase();
+  let reply;
+  if(t.includes('heart')) reply = `Your heart rate right now is ${Math.round(you.hr)} bpm. Above 100 usually means your body is working hard or you're stressed. Try slowing your breathing for a minute.`;
+  else if(t.includes('dehydrat') || t.includes('water')) reply = `Your body temperature is ${you.temp.toFixed(1)}°C. If you're feeling thirsty, tired, or your temperature keeps rising, that's a sign to drink water and rest in the shade.`;
+  else if(t.includes('rest') || t.includes('tired')) reply = you.stress>40 ? "Your stress level is fairly high right now — yes, it's a good time to take a short break if you can." : "Your numbers look steady, so a short break is your call, not something you need right now.";
+  else reply = "Right now your heart rate, temperature, and stress level are all being tracked live. Ask me about any of them and I'll explain what they mean.";
+  setTimeout(()=>addMsg('aiChat','them',reply), 600);
+}
+function sendAi(){
+  const input = document.getElementById('aiInput');
+  if(!input.value.trim()) return;
+  addMsg('aiChat','me',input.value);
+  aiReply(input.value);
+  input.value='';
+}
+document.getElementById('aiSend').onclick = sendAi;
+document.getElementById('aiInput').addEventListener('keydown', e => { if(e.key==='Enter') sendAi(); });
+document.querySelectorAll('#screen-ai .chip').forEach(c => c.onclick = () => {
+  addMsg('aiChat','me', c.dataset.msg);
+  aiReply(c.dataset.msg);
+});
+
+// ---------- glossary ----------
+const TERMS = [
+  ["Heart Rate", "How many times your heart beats in one minute. A normal resting rate is usually 60–100 beats per minute."],
+  ["Body Temperature", "How warm or cold your body is. A normal temperature is close to 37°C — much higher or lower can be a warning sign."],
+  ["Stress Level", "A number your ring calculates from your heart and movement patterns to show how hard your body is working."],
+  ["GPS Tracking", "A way of finding your exact location using satellites, so your team knows where you are at all times."],
+  ["Tactical Tap", "A quiet way to call for help by tapping your ring, without needing to speak or reach for a device."],
+  ["Vitals", "The basic signs doctors check to see how your body is doing — heart rate, temperature, and stress are examples."],
+  ["Dehydration", "When your body doesn't have enough water. Signs include thirst, tiredness, and a faster heart rate."],
+  ["Heat Exhaustion", "Feeling unwell from too much heat — symptoms include heavy sweating, dizziness, and a fast pulse."],
+];
+const list = document.getElementById('glossaryList');
+TERMS.forEach(([term,def]) => {
+  const div = document.createElement('div');
+  div.className = 'term';
+  div.innerHTML = `<div class="term-head"><b>${term}</b><span>+</span></div><div class="term-body">${def}</div>`;
+  div.querySelector('.term-head').onclick = () => div.classList.toggle('open');
+  list.appendChild(div);
+});
+
+// ---------- live simulation ----------
+setInterval(() => {
+  if(!you.alert){
+    you.hr = Math.max(60, Math.min(115, you.hr + (Math.random()*6-3)));
+    you.temp = Math.max(36.5, Math.min(38.2, you.temp + (Math.random()*0.08-0.04)));
+    you.stress = Math.max(5, Math.min(80, you.stress + (Math.random()*8-4)));
+  }
+  you.battery = Math.max(1, you.battery - (Math.random()<0.1?1:0));
+  renderHome();
+  renderMap();
+}, 2500);
+
+renderHome();
+renderMap();
+</script>
+</body>
+</html>
